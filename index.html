@@ -175,6 +175,30 @@
 
   .empty-note{font-size:12.5px;color:var(--slate-400);text-align:center;padding:20px 0;}
 
+  /* EVOLUTION CHARTS */
+  .evo-charts{display:flex;flex-direction:column;gap:24px;}
+  .evo-chart-title{
+    font-size:11.5px;font-weight:700;color:var(--slate-600);margin-bottom:8px;
+    display:flex;align-items:center;gap:4px;
+  }
+  .evo-legend{margin-left:auto;font-weight:500;color:var(--slate-400);display:flex;align-items:center;gap:4px;font-size:11px;}
+  .evo-legend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:2px;}
+  .evo-charts svg{display:block;overflow:visible;}
+
+  /* NOVOS CLIENTES TABLE */
+  .novos-table{width:100%;border-collapse:collapse;}
+  .novos-table th{
+    font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--slate-600);
+    text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);
+  }
+  .novos-table th:not(:first-child), .novos-table td:not(:first-child){text-align:right;}
+  .novos-table td{
+    font-size:13px;padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink-900);
+  }
+  .novos-table td:first-child{font-weight:700;color:var(--navy-900);}
+  .novos-table tr:last-child td{border-bottom:none;}
+  .novos-table tr:hover td{background:var(--paper);}
+
   .footer-note{text-align:center;font-size:11.5px;color:var(--slate-400);margin-top:6px;}
 </style>
 </head>
@@ -266,11 +290,16 @@
       </div>
     </div>
 
-    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+    <div class="kpi-grid">
       <div class="kpi-card"><div class="bar" style="background:var(--green-400);"></div>
         <div class="kpi-label">Rentabilidade média (ganho)</div>
         <div class="kpi-value" id="kpi-rent">—</div>
         <div class="kpi-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--teal-500);"></div>
+        <div class="kpi-label">Ticket médio (ganho)</div>
+        <div class="kpi-value" id="kpi-ticket">—</div>
+        <div class="kpi-sub" id="kpi-ticket-sub">&nbsp;</div>
       </div>
       <div class="kpi-card"><div class="bar" style="background:var(--red-500);"></div>
         <div class="kpi-label">Frete perdido (estimado)</div>
@@ -282,6 +311,27 @@
         <div class="kpi-value" id="kpi-aberto">—</div>
         <div class="kpi-sub" id="kpi-aberto-sub">&nbsp;</div>
       </div>
+    </div>
+
+    <div class="section">
+      <h2 id="evo-title">Evolução mês a mês</h2>
+      <p class="section-sub" id="evo-sub">Cotações totais x ganhas, e faturamento ganho — histórico completo, ignora o filtro de período</p>
+      <div class="evo-charts">
+        <div>
+          <div class="evo-chart-title">Cotações por mês <span class="evo-legend"><i style="background:var(--slate-400);"></i>Total &nbsp; <i style="background:var(--green-600);"></i>Ganhas</span></div>
+          <div id="evo-bar-chart"></div>
+        </div>
+        <div>
+          <div class="evo-chart-title">Faturamento ganho por mês (R$ Empresa)</div>
+          <div id="evo-line-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Novos clientes por mês</h2>
+      <p class="section-sub">Cliente é considerado "novo" no mês da 1ª cotação GANHA dele. Carregamentos e valor contam só as ganhas nesse mês; a última coluna mostra quantas outras cotações desse mesmo cliente, no mesmo mês, foram perdidas — ignora os filtros acima, é histórico completo</p>
+      <div id="novos-clientes"></div>
     </div>
 
     <div class="two-col">
@@ -297,10 +347,17 @@
       </div>
     </div>
 
-    <div class="section">
-      <h2>Clientes com mais cotações perdidas</h2>
-      <p class="section-sub">Soma de Preço + Sem resposta + Cancelado no período selecionado</p>
-      <div id="rank-perdidos"></div>
+    <div class="two-col">
+      <div class="section">
+        <h2>Top clientes — Ticket médio</h2>
+        <p class="section-sub">Valor médio de frete empresa por cotação ganha</p>
+        <div id="rank-ticket"></div>
+      </div>
+      <div class="section">
+        <h2>Clientes com mais cotações perdidas</h2>
+        <p class="section-sub">Soma de Preço + Sem resposta + Cancelado no período selecionado</p>
+        <div id="rank-perdidos"></div>
+      </div>
     </div>
 
     <p class="footer-note">GODI Transportes — dados ao vivo da planilha "COTAÇÕES PEDRO AUGUSTO" · atualizado <span id="footer-time">—</span></p>
@@ -376,6 +433,10 @@ function fmtBRL(n){
 }
 function fmtPct(n){
   return n.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%';
+}
+function fmtBRLShort(n){
+  if(Math.abs(n) >= 1000) return 'R$ ' + (n/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k';
+  return fmtBRL(n);
 }
 
 // ---------- Load & parse sheet ----------
@@ -581,6 +642,11 @@ function applyFilters(){
   $('kpi-comissao-sub').textContent = 'V. COM somado';
 
   $('kpi-rent').textContent = rentValidos.length ? fmtPct(rentMedia) : '—';
+
+  const ticketMedio = ganhos.length ? freteGanho / ganhos.length : 0;
+  $('kpi-ticket').textContent = ganhos.length ? fmtBRL(ticketMedio) : '—';
+  $('kpi-ticket-sub').textContent = 'por cotação ganha';
+
   $('kpi-perdido').textContent = fmtBRL(fretePerdido);
   $('kpi-perdido-sub').textContent = `${perdidos.length} cotações perdidas`;
   $('kpi-aberto').textContent = abertos.length;
@@ -588,7 +654,18 @@ function applyFilters(){
 
   renderStatusBreakdown(data, total);
   renderRankClientes(data, ganhos);
+  renderRankTicket(data);
   renderRankPerdidos(data);
+  renderEvolution(getClientFiltered());
+  renderNovosClientes();
+
+  $('evo-sub').textContent = selectedClient
+    ? `Histórico completo de ${selectedClient} — ignora o filtro de período`
+    : 'Cotações totais x ganhas, e faturamento ganho — histórico completo, ignora o filtro de período';
+}
+
+function getClientFiltered(){
+  return RECORDS.filter(r => !selectedClient || r.cliente === selectedClient);
 }
 
 function renderStatusBreakdown(data, total){
@@ -628,6 +705,150 @@ function renderRankClientes(data, ganhos){
       <div class="rank-track"><div class="rank-fill" style="width:${val/max*100}%;"></div></div>
       <div class="rank-val">${fmtBRL(val)}</div>
     </div>`).join('');
+}
+
+function renderNovosClientes(){
+  // Sempre olha o histórico completo — não faz sentido "cliente novo" respeitar filtro de cliente/período
+  // "Novo" = primeira vez que o cliente aparece com status GANHO (não a primeira cotação, seja qual for o status)
+  const firstDate = {};
+  RECORDS.forEach(r => {
+    if(!r.data || r.status !== 'GANHO') return;
+    if(!firstDate[r.cliente] || r.data < firstDate[r.cliente]) firstDate[r.cliente] = r.data;
+  });
+
+  const byMonth = {};
+  Object.entries(firstDate).forEach(([cliente, d]) => {
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!byMonth[key]) byMonth[key] = {count:0, carregamentos:0, valorGanho:0, perdidas:0};
+    byMonth[key].count++;
+  });
+
+  RECORDS.forEach(r => {
+    if(!r.data) return;
+    const fd = firstDate[r.cliente];
+    if(!fd) return;
+    if(fd.getFullYear() === r.data.getFullYear() && fd.getMonth() === r.data.getMonth()){
+      const key = `${r.data.getFullYear()}-${String(r.data.getMonth()+1).padStart(2,'0')}`;
+      if(r.status === 'GANHO'){
+        byMonth[key].carregamentos++;
+        byMonth[key].valorGanho += r.freteEmpresa;
+      } else if(LOST_STATUSES.includes(r.status)){
+        byMonth[key].perdidas++;
+      }
+    }
+  });
+
+  const keys = Object.keys(byMonth).sort();
+  const wrap = $('novos-clientes');
+  if(!keys.length){ wrap.innerHTML = '<p class="empty-note">Sem dados suficientes.</p>'; return; }
+
+  wrap.innerHTML = `<table class="novos-table">
+    <thead><tr><th>Mês</th><th>Clientes novos (1ª GANHO)</th><th>Carregamentos (ganhas)</th><th>Valor ganho</th><th>Cotações perdidas no mês</th></tr></thead>
+    <tbody>${keys.map(k => {
+      const [y,m] = k.split('-');
+      const lab = MESES_PT[+m-1] + '/' + y;
+      const d = byMonth[k];
+      return `<tr><td>${lab}</td><td>${d.count}</td><td>${d.carregamentos}</td><td>${fmtBRL(d.valorGanho)}</td><td>${d.perdidas}</td></tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function renderRankTicket(data){
+  const wrap = $('rank-ticket');
+  if(selectedClient){
+    wrap.innerHTML = '<p class="empty-note">Visão individual ativa — limpe o filtro de cliente para ver o ranking geral.</p>';
+    return;
+  }
+  const ganhos = data.filter(r => r.status === 'GANHO');
+  const byClient = {};
+  ganhos.forEach(r => {
+    if(!byClient[r.cliente]) byClient[r.cliente] = {sum:0, count:0};
+    byClient[r.cliente].sum += r.freteEmpresa;
+    byClient[r.cliente].count++;
+  });
+  const arr = Object.entries(byClient)
+    .map(([cliente,d]) => [cliente, d.sum/d.count, d.count])
+    .sort((a,b) => b[1]-a[1]).slice(0,8);
+  if(!arr.length){ wrap.innerHTML = '<p class="empty-note">Nenhuma cotação ganha nesse filtro.</p>'; return; }
+  const max = arr[0][1] || 1;
+  wrap.innerHTML = arr.map(([cliente,avg,count],i) => `
+    <div class="rank-row" onclick="selectClientFromRank('${cliente.replace(/'/g,"\\'")}')">
+      <div class="rank-n">${i+1}</div>
+      <div class="rank-name">${cliente}</div>
+      <div class="rank-track"><div class="rank-fill" style="width:${avg/max*100}%;background:linear-gradient(90deg, var(--navy-700), var(--teal-500));"></div></div>
+      <div class="rank-val">${fmtBRL(avg)}<br><small style="font-weight:500;color:var(--slate-400);">${count} ganhas</small></div>
+    </div>`).join('');
+}
+
+// ---------- Monthly evolution charts ----------
+function renderEvolution(clientData){
+  const byMonth = {};
+  clientData.forEach(r => {
+    if(!r.data) return;
+    const key = `${r.data.getFullYear()}-${String(r.data.getMonth()+1).padStart(2,'0')}`;
+    if(!byMonth[key]) byMonth[key] = {total:0, ganho:0, fat:0};
+    byMonth[key].total++;
+    if(r.status === 'GANHO'){ byMonth[key].ganho++; byMonth[key].fat += r.freteEmpresa; }
+  });
+  const keys = Object.keys(byMonth).sort();
+  if(!keys.length){
+    $('evo-bar-chart').innerHTML = '<p class="empty-note">Sem dados suficientes.</p>';
+    $('evo-line-chart').innerHTML = '';
+    return;
+  }
+  const labels = keys.map(k => { const [y,m] = k.split('-'); return MESES_PT[+m-1] + '/' + y.slice(2); });
+  const totals = keys.map(k => byMonth[k].total);
+  const ganhosArr = keys.map(k => byMonth[k].ganho);
+  const fats = keys.map(k => byMonth[k].fat);
+
+  $('evo-bar-chart').innerHTML = buildBarChart(labels, totals, ganhosArr);
+  $('evo-line-chart').innerHTML = buildLineChart(labels, fats);
+}
+
+function buildBarChart(labels, totals, ganhos){
+  const n = labels.length;
+  const w = Math.max(n*80, 260);
+  const h = 150, padBottom = 24, padTop = 16;
+  const maxVal = Math.max(...totals, 1);
+  const groupW = w/n;
+  const barW = Math.min(20, groupW/3.2);
+  let bars = '';
+  labels.forEach((lab,i) => {
+    const cx = i*groupW + groupW/2;
+    const totalH = (totals[i]/maxVal) * (h-padTop-padBottom);
+    const ganhoH = (ganhos[i]/maxVal) * (h-padTop-padBottom);
+    const totalY = h-padBottom-totalH;
+    const ganhoY = h-padBottom-ganhoH;
+    bars += `<rect x="${(cx-barW-2).toFixed(1)}" y="${totalY.toFixed(1)}" width="${barW.toFixed(1)}" height="${totalH.toFixed(1)}" fill="var(--slate-400)" opacity="0.55" rx="2"/>`;
+    bars += `<text x="${(cx-barW/2-2).toFixed(1)}" y="${(totalY-4).toFixed(1)}" font-size="9.5" fill="var(--slate-600)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${totals[i]}</text>`;
+    bars += `<rect x="${(cx+2).toFixed(1)}" y="${ganhoY.toFixed(1)}" width="${barW.toFixed(1)}" height="${ganhoH.toFixed(1)}" fill="var(--green-600)" rx="2"/>`;
+    bars += `<text x="${(cx+barW/2+2).toFixed(1)}" y="${(ganhoY-4).toFixed(1)}" font-size="9.5" fill="var(--green-600)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700">${ganhos[i]}</text>`;
+    bars += `<text x="${cx.toFixed(1)}" y="${h-6}" font-size="10.5" fill="var(--slate-400)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${lab}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:150px;">${bars}</svg>`;
+}
+
+function buildLineChart(labels, values){
+  const n = labels.length;
+  const w = Math.max(n*80, 260);
+  const h = 150, padBottom = 24, padTop = 26, padSide = 14;
+  const maxVal = Math.max(...values, 1);
+  const stepX = n > 1 ? (w-padSide*2)/(n-1) : 0;
+  const pts = values.map((v,i) => {
+    const x = padSide + i*stepX;
+    const y = h-padBottom - (v/maxVal)*(h-padTop-padBottom);
+    return [x,y];
+  });
+  const pathD = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${h-padBottom} L${pts[0][0].toFixed(1)},${h-padBottom} Z`;
+  const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="var(--teal-500)" stroke="var(--white)" stroke-width="1.5"/>`).join('');
+  const monthLabels = labels.map((lab,i) => `<text x="${pts[i][0].toFixed(1)}" y="${h-6}" font-size="10.5" fill="var(--slate-400)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${lab}</text>`).join('');
+  const valLabels = pts.map((p,i) => `<text x="${p[0].toFixed(1)}" y="${(p[1]-10).toFixed(1)}" font-size="10" fill="var(--navy-900)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700">${fmtBRLShort(values[i])}</text>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:150px;">
+    <path d="${areaD}" fill="var(--teal-400)" opacity="0.15"/>
+    <path d="${pathD}" fill="none" stroke="var(--teal-500)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${monthLabels}${valLabels}
+  </svg>`;
 }
 
 function renderRankPerdidos(data){
