@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Comercial — GODI Transportes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="brand-row">
+      <div class="brand-mark">G</div>
+      <div class="brand-name">GODI <span class="brand-tag">| Unindo Propósitos.</span></div>
+    </div>
+    <h1>Dashboard Comercial</h1>
+    <div class="header-sub">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Conectando à planilha...</span>
+      <button id="refresh-btn" title="Atualizar dados">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Buscando cotações direto da sua planilha…
+  </div>
+
+  <div id="error-box">
+    <h3>Não consegui buscar os dados agora</h3>
+    <p id="error-msg">Verifique sua conexão e tente atualizar novamente.</p>
+  </div>
+
+  <div id="content">
+
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="bar" style="background:var(--teal-500);"></div>
+        <div class="kpi-label">Cotações (total)</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--green-600);"></div>
+        <div class="kpi-label">Taxa de conversão</div>
+        <div class="kpi-value" id="kpi-winrate">—</div>
+        <div class="kpi-sub" id="kpi-winrate-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--navy-700);"></div>
+        <div class="kpi-label">Frete empresa (ganho)</div>
+        <div class="kpi-value" id="kpi-frete">—</div>
+        <div class="kpi-sub" id="kpi-frete-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--amber-500);"></div>
+        <div class="kpi-label">Comissão (V.COM) ganha</div>
+        <div class="kpi-value" id="kpi-comissao">—</div>
+        <div class="kpi-sub">V. COM somado</div>
+      </div>
+    </div>
+
+    <p class="section-sub" style="margin:-6px 0 14px;">KPIs acima consideram o histórico completo. Escolha uma área abaixo para explorar com filtros de cliente e período.</p>
+
+    <div class="nav-grid">
+      <a class="nav-card" href="clientes-novos.html">
+        <div class="nav-icon" style="background:rgba(95,184,56,.12);color:var(--green-600);">🟢</div>
+        <h3>Clientes Novos</h3>
+        <p>Quando cada cliente fechou a 1ª cotação ganha, quanto carregou e quanto perdeu no mesmo mês.</p>
+        <div class="nav-cta">Abrir seção <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+      <a class="nav-card" href="evolucao.html">
+        <div class="nav-icon" style="background:rgba(23,201,163,.12);color:var(--teal-500);">📊</div>
+        <h3>Evolução Mensal</h3>
+        <p>Cotações totais x ganhas e faturamento ganho, mês a mês.</p>
+        <div class="nav-cta">Abrir seção <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+      <a class="nav-card" href="rankings.html">
+        <div class="nav-icon" style="background:rgba(18,48,85,.1);color:var(--navy-700);">🏆</div>
+        <h3>Rankings</h3>
+        <p>Top clientes por frete, por ticket médio e clientes com mais cotações perdidas.</p>
+        <div class="nav-cta">Abrir seção <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+      <a class="nav-card" href="status.html">
+        <div class="nav-icon" style="background:rgba(224,82,79,.1);color:var(--red-500);">⚖️</div>
+        <h3>Status das Cotações</h3>
+        <p>Distribuição Ganho x Preço x Sem resposta x Cancelado x Aberto.</p>
+        <div class="nav-cta">Abrir seção <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+    </div>
+
+    <p class="footer-note">GODI Transportes — dados ao vivo da planilha "COTAÇÕES PEDRO AUGUSTO" · atualizado <span id="footer-time">—</span></p>
+  </div>
+
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+function renderHome(){
+  const data = GODI.RECORDS; // Home mostra sempre o histórico completo, sem filtro
+  const total = data.length;
+  const ganhos = data.filter(r => r.status === 'GANHO');
+  const perdidos = data.filter(r => LOST_STATUSES.includes(r.status));
+  const winrate = (ganhos.length + perdidos.length) > 0
+    ? (ganhos.length / (ganhos.length + perdidos.length) * 100) : 0;
+  const freteGanho = ganhos.reduce((s,r)=>s+r.freteEmpresa,0);
+  const comissaoGanha = ganhos.reduce((s,r)=>s+r.vCom,0);
+
+  $('kpi-total').textContent = total;
+  $('kpi-total-sub').textContent = `${[...new Set(data.map(r=>r.cliente))].length} clientes`;
+  $('kpi-winrate').textContent = (ganhos.length+perdidos.length) ? fmtPct(winrate) : '—';
+  $('kpi-winrate-sub').textContent = `${ganhos.length} ganhas de ${ganhos.length+perdidos.length} decididas`;
+  $('kpi-frete').textContent = fmtBRL(freteGanho);
+  $('kpi-frete-sub').textContent = `${ganhos.length} cotações ganhas`;
+  $('kpi-comissao').textContent = fmtBRL(comissaoGanha);
+}
+
+GODI.boot(renderHome);
+GODI.wireRefresh(renderHome);
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rankings — Dashboard GODI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="brand-row">
+      <div class="brand-mark">G</div>
+      <div class="brand-name">GODI <span class="brand-tag">| Unindo Propósitos.</span></div>
+    </div>
+    <div class="header-top-row">
+      <h1>Rankings</h1>
+    </div>
+    <a class="back-link" href="index.html">← Voltar para a Home</a>
+    <div class="header-sub" style="margin-top:14px;">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Conectando à planilha...</span>
+      <button id="refresh-btn" title="Atualizar dados">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Buscando cotações direto da sua planilha…
+  </div>
+
+  <div id="error-box">
+    <h3>Não consegui buscar os dados agora</h3>
+    <p id="error-msg">Verifique sua conexão e tente atualizar novamente.</p>
+  </div>
+
+  <div id="content">
+
+    <div class="filter-bar">
+      <div class="filter-group wide">
+        <label for="f-cliente">Cliente</label>
+        <select id="f-cliente"></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-tipo">Período</label>
+        <select id="f-tipo">
+          <option value="todos">Todo o período</option>
+          <option value="ano">Ano</option>
+          <option value="mes">Mês</option>
+          <option value="semana">Semana do mês</option>
+        </select>
+      </div>
+      <div class="filter-group" id="grp-ano" style="display:none;">
+        <label for="f-ano">Ano</label>
+        <select id="f-ano"></select>
+      </div>
+      <div class="filter-group" id="grp-mes" style="display:none;">
+        <label for="f-mes">Mês</label>
+        <select id="f-mes"></select>
+      </div>
+      <div class="filter-group" id="grp-semana" style="display:none;">
+        <label for="f-semana">Semana</label>
+        <select id="f-semana"></select>
+      </div>
+      <button class="chip-clear" id="btn-limpar">Limpar filtros</button>
+    </div>
+
+    <div class="client-banner" id="client-banner">
+      <div><small>Visão individual</small><span id="client-banner-name">—</span></div>
+      <button id="client-banner-clear">Voltar para todos ✕</button>
+    </div>
+
+    <div class="section">
+      <h2>Top clientes — Frete empresa (ganho)</h2>
+      <p class="section-sub">Clique num cliente para abrir a visão individual dele nesta página</p>
+      <div id="rank-list"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <h2>Top clientes — Ticket médio</h2>
+        <p class="section-sub">Valor médio de frete empresa por cotação ganha</p>
+        <div id="rank-ticket"></div>
+      </div>
+      <div class="section">
+        <h2>Clientes com mais cotações perdidas</h2>
+        <p class="section-sub">Soma de Preço + Sem resposta + Cancelado no período selecionado</p>
+        <div id="rank-perdidos"></div>
+      </div>
+    </div>
+
+    <p class="footer-note">GODI Transportes — dados ao vivo da planilha "COTAÇÕES PEDRO AUGUSTO" · atualizado <span id="footer-time">—</span></p>
+  </div>
+
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+function selectClientFromRank(cliente){
+  GODI.selectClientAndReload(cliente);
+}
+
+function renderRankClientes(data, ganhos){
+  const wrap = $('rank-list');
+  if(GODI.state.cliente){
+    wrap.innerHTML = '<p class="empty-note">Visão individual ativa — limpe o filtro de cliente para ver o ranking geral.</p>';
+    return;
+  }
+  const byClient = {};
+  ganhos.forEach(r => { byClient[r.cliente] = (byClient[r.cliente]||0) + r.freteEmpresa; });
+  const arr = Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(!arr.length){ wrap.innerHTML = '<p class="empty-note">Nenhuma cotação ganha nesse filtro.</p>'; return; }
+  const max = arr[0][1] || 1;
+  wrap.innerHTML = arr.map(([cliente,val],i) => `
+    <div class="rank-row" onclick="selectClientFromRank('${cliente.replace(/'/g,"\\'")}')">
+      <div class="rank-n">${i+1}</div>
+      <div class="rank-name">${cliente}</div>
+      <div class="rank-track"><div class="rank-fill" style="width:${val/max*100}%;"></div></div>
+      <div class="rank-val">${fmtBRL(val)}</div>
+    </div>`).join('');
+}
+
+function renderRankTicket(data){
+  const wrap = $('rank-ticket');
+  if(GODI.state.cliente){
+    wrap.innerHTML = '<p class="empty-note">Visão individual ativa — limpe o filtro de cliente para ver o ranking geral.</p>';
+    return;
+  }
+  const ganhos = data.filter(r => r.status === 'GANHO');
+  const byClient = {};
+  ganhos.forEach(r => {
+    if(!byClient[r.cliente]) byClient[r.cliente] = {sum:0, count:0};
+    byClient[r.cliente].sum += r.freteEmpresa;
+    byClient[r.cliente].count++;
+  });
+  const arr = Object.entries(byClient)
+    .map(([cliente,d]) => [cliente, d.sum/d.count, d.count])
+    .sort((a,b) => b[1]-a[1]).slice(0,8);
+  if(!arr.length){ wrap.innerHTML = '<p class="empty-note">Nenhuma cotação ganha nesse filtro.</p>'; return; }
+  const max = arr[0][1] || 1;
+  wrap.innerHTML = arr.map(([cliente,avg,count],i) => `
+    <div class="rank-row" onclick="selectClientFromRank('${cliente.replace(/'/g,"\\'")}')">
+      <div class="rank-n">${i+1}</div>
+      <div class="rank-name">${cliente}</div>
+      <div class="rank-track"><div class="rank-fill" style="width:${avg/max*100}%;background:linear-gradient(90deg, var(--navy-700), var(--teal-500));"></div></div>
+      <div class="rank-val">${fmtBRL(avg)}<br><small style="font-weight:500;color:var(--slate-400);">${count} ganhas</small></div>
+    </div>`).join('');
+}
+
+function renderRankPerdidos(data){
+  const wrap = $('rank-perdidos');
+  const perdidos = data.filter(r => LOST_STATUSES.includes(r.status));
+  const byClient = {};
+  perdidos.forEach(r => {
+    if(!byClient[r.cliente]) byClient[r.cliente] = {count:0, val:0};
+    byClient[r.cliente].count++;
+    byClient[r.cliente].val += r.freteEmpresa;
+  });
+  const arr = Object.entries(byClient).sort((a,b)=>b[1].count-a[1].count).slice(0,8);
+  if(!arr.length){ wrap.innerHTML = '<p class="empty-note">Nenhuma cotação perdida nesse filtro. 🎉</p>'; return; }
+  const max = arr[0][1].count || 1;
+  wrap.innerHTML = arr.map(([cliente,d],i) => `
+    <div class="rank-row" onclick="selectClientFromRank('${cliente.replace(/'/g,"\\'")}')">
+      <div class="rank-n">${i+1}</div>
+      <div class="rank-name">${cliente}</div>
+      <div class="rank-track"><div class="rank-fill" style="width:${d.count/max*100}%;background:linear-gradient(90deg, var(--red-500), var(--amber-500));"></div></div>
+      <div class="rank-val">${d.count} perdas<br><small style="font-weight:500;color:var(--slate-400);">${fmtBRL(d.val)}</small></div>
+    </div>`).join('');
+}
+
+function renderRankings(){
+  const data = GODI.getFiltered();
+  const ganhos = data.filter(r => r.status === 'GANHO');
+  renderRankClientes(data, ganhos);
+  renderRankTicket(data);
+  renderRankPerdidos(data);
+}
+
+GODI.boot(() => {
+  GODI.buildFilters();
+  GODI.wireFilterBar(renderRankings);
+});
+GODI.wireRefresh(() => {
+  GODI.buildFilters();
+  renderRankings();
+});
+</script>
+</body>
+</html>
