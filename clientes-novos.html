@@ -42,9 +42,22 @@
 
   <div id="content">
     <div class="section">
-      <h2>Novos clientes por mês</h2>
-      <p class="section-sub">Cliente é considerado "novo" no mês da 1ª cotação GANHA dele. Carregamentos e valor contam só as ganhas nesse mês; a última coluna mostra quantas outras cotações desse mesmo cliente, no mesmo mês, foram perdidas. Esta seção sempre olha o histórico completo — não tem filtro.</p>
+      <h2>Resumo por mês</h2>
+      <p class="section-sub">Cliente é considerado "novo" no mês da 1ª cotação GANHA dele. Carregamentos e valor contam só as ganhas nesse mês; a última coluna mostra quantas outras cotações desse mesmo cliente, no mesmo mês, foram perdidas. Esta seção sempre olha o histórico completo. Clique num mês pra ver os clientes na tabela abaixo.</p>
       <div id="novos-clientes"></div>
+    </div>
+
+    <div class="section">
+      <h2>Detalhamento por cliente</h2>
+      <p class="section-sub">Nome, data da 1ª cotação ganha, carregamentos no mês e cotações perdidas no mesmo mês.</p>
+      <div class="filter-bar" style="margin-bottom:16px;">
+        <div class="filter-group">
+          <label for="f-novo-mes">Mês</label>
+          <select id="f-novo-mes"><option value="">Todos os meses</option></select>
+        </div>
+        <button class="chip-clear" id="btn-novo-limpar">Limpar</button>
+      </div>
+      <div id="novos-detalhe"></div>
     </div>
 
     <p class="footer-note">GODI Transportes — dados ao vivo da planilha "COTAÇÕES PEDRO AUGUSTO" · atualizado <span id="footer-time">—</span></p>
@@ -54,7 +67,14 @@
 
 <script src="assets/data.js"></script>
 <script>
-function renderNovosClientes(){
+let NOVOS_BY_MONTH = {};
+let NOVOS_DETAIL = [];
+let NOVOS_MES_ATUAL = '';
+
+/* Monta os dois conjuntos de dados a partir do histórico completo:
+   - byMonth: agregado (quantos clientes novos, carregamentos, valor, perdidas)
+   - detail: uma linha por cliente novo, com nome, data e números do mês dele */
+function computeNovosClientes(){
   const RECORDS = GODI.RECORDS;
   const firstDate = {};
   RECORDS.forEach(r => {
@@ -63,10 +83,12 @@ function renderNovosClientes(){
   });
 
   const byMonth = {};
+  const detailByClient = {};
   Object.entries(firstDate).forEach(([cliente, d]) => {
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     if(!byMonth[key]) byMonth[key] = {count:0, carregamentos:0, valorGanho:0, perdidas:0};
     byMonth[key].count++;
+    detailByClient[cliente] = {cliente, monthKey:key, firstDate:d, carregamentos:0, valorGanho:0, perdidas:0};
   });
 
   RECORDS.forEach(r => {
@@ -75,16 +97,31 @@ function renderNovosClientes(){
     if(!fd) return;
     if(fd.getFullYear() === r.data.getFullYear() && fd.getMonth() === r.data.getMonth()){
       const key = `${r.data.getFullYear()}-${String(r.data.getMonth()+1).padStart(2,'0')}`;
+      const det = detailByClient[r.cliente];
       if(r.status === 'GANHO'){
         byMonth[key].carregamentos++;
         byMonth[key].valorGanho += r.freteEmpresa;
+        det.carregamentos++;
+        det.valorGanho += r.freteEmpresa;
       } else if(LOST_STATUSES.includes(r.status)){
         byMonth[key].perdidas++;
+        det.perdidas++;
       }
     }
   });
 
-  const keys = Object.keys(byMonth).sort();
+  NOVOS_BY_MONTH = byMonth;
+  NOVOS_DETAIL = Object.values(detailByClient).sort((a,b) => b.firstDate - a.firstDate);
+}
+
+function selectNovosMes(key){
+  NOVOS_MES_ATUAL = key;
+  if($('f-novo-mes')) $('f-novo-mes').value = key;
+  renderNovosDetalhe();
+}
+
+function renderNovosResumo(){
+  const keys = Object.keys(NOVOS_BY_MONTH).sort();
   const wrap = $('novos-clientes');
   if(!keys.length){ wrap.innerHTML = '<p class="empty-note">Sem dados suficientes.</p>'; return; }
 
@@ -93,11 +130,51 @@ function renderNovosClientes(){
     <tbody>${keys.map(k => {
       const [y,m] = k.split('-');
       const lab = MESES_PT[+m-1] + '/' + y;
-      const d = byMonth[k];
-      return `<tr><td>${lab}</td><td>${d.count}</td><td>${d.carregamentos}</td><td>${fmtBRL(d.valorGanho)}</td><td>${d.perdidas}</td></tr>`;
+      const d = NOVOS_BY_MONTH[k];
+      return `<tr style="cursor:pointer;" onclick="selectNovosMes('${k}')"><td>${lab}</td><td>${d.count}</td><td>${d.carregamentos}</td><td>${fmtBRL(d.valorGanho)}</td><td>${d.perdidas}</td></tr>`;
     }).join('')}</tbody>
   </table>`;
 }
+
+function renderNovosDetalhe(){
+  const wrap = $('novos-detalhe');
+  const rows = NOVOS_MES_ATUAL ? NOVOS_DETAIL.filter(d => d.monthKey === NOVOS_MES_ATUAL) : NOVOS_DETAIL;
+  if(!rows.length){ wrap.innerHTML = '<p class="empty-note">Nenhum cliente novo nesse mês.</p>'; return; }
+
+  wrap.innerHTML = `<table class="novos-table">
+    <thead><tr><th>Cliente</th><th>Data 1ª cotação ganha</th><th>Carregamentos no mês</th><th>Valor ganho no mês</th><th>Perdidas no mesmo mês</th></tr></thead>
+    <tbody>${rows.map(d => {
+      const dataFmt = d.firstDate.toLocaleDateString('pt-BR');
+      return `<tr><td>${d.cliente}</td><td>${dataFmt}</td><td>${d.carregamentos}</td><td>${fmtBRL(d.valorGanho)}</td><td>${d.perdidas}</td></tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function popularFiltroMes(){
+  const keys = Object.keys(NOVOS_BY_MONTH).sort().reverse();
+  const sel = $('f-novo-mes');
+  sel.innerHTML = '<option value="">Todos os meses</option>' + keys.map(k => {
+    const [y,m] = k.split('-');
+    return `<option value="${k}">${MESES_PT[+m-1]}/${y}</option>`;
+  }).join('');
+}
+
+function renderNovosClientes(){
+  computeNovosClientes();
+  renderNovosResumo();
+  popularFiltroMes();
+  renderNovosDetalhe();
+}
+
+$('f-novo-mes') && $('f-novo-mes').addEventListener('change', () => {
+  NOVOS_MES_ATUAL = $('f-novo-mes').value;
+  renderNovosDetalhe();
+});
+$('btn-novo-limpar') && $('btn-novo-limpar').addEventListener('click', () => {
+  NOVOS_MES_ATUAL = '';
+  $('f-novo-mes').value = '';
+  renderNovosDetalhe();
+});
 
 GODI.boot(renderNovosClientes);
 GODI.wireRefresh(renderNovosClientes);
