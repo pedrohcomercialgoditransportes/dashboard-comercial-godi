@@ -75,6 +75,24 @@ a{color:inherit;}
   content:"";position:absolute;right:40px;bottom:-80px;width:150px;height:150px;
   border-radius:50%;border:16px solid rgba(2,197,219,.14);
 }
+.header-photo{
+  position:absolute;
+  right:-6px;
+  bottom:-4px;
+  height:150%;
+  width:auto;
+  max-width:46%;
+  object-fit:cover;
+  object-position:top;
+  opacity:.5;
+  -webkit-mask-image:linear-gradient(to right, transparent 0%, black 45%);
+  mask-image:linear-gradient(to right, transparent 0%, black 45%);
+  pointer-events:none;
+  z-index:0;
+}
+@media (max-width:640px){
+  .header-photo{display:none;}
+}
 .brand-row{display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
 .brand-mark{
   width:32px;height:32px;border-radius:9px;background:var(--godi-gradient);
