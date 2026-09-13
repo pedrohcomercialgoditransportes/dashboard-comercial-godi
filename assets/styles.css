@@ -81,7 +81,7 @@ a{color:inherit;}
 }
 .app-header::before{
   content:"";position:absolute;inset:0;
-  background:url('map-pattern.svg') no-repeat right -20px top 50%;
+  background:url('map-pattern.svg?v=3') no-repeat right -20px top 50%;
   background-size:560px auto;
   opacity:.9;
   pointer-events:none;
