@@ -86,6 +86,22 @@ a{color:inherit;}
   opacity:.9;
   pointer-events:none;
 }
+.header-avatar{
+  position:absolute;
+  top:24px;
+  right:28px;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  object-fit:cover;
+  object-position:top;
+  border:2px solid rgba(255,255,255,.25);
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+  z-index:1;
+}
+@media (max-width:640px){
+  .header-avatar{display:none;}
+}
 .brand-row{display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
 .brand-mark{
   width:32px;height:32px;border-radius:9px;background:var(--godi-gradient);
