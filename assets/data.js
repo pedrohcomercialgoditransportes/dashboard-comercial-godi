@@ -13,11 +13,18 @@ const MESES_PT = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','N
 const STATUS_COLORS = {
   'GANHO': 'var(--green-600)',
   'PREÇO': 'var(--teal-500)',
-  'ABERTO': 'var(--slate-400)',
+  'ABERTO': 'var(--godi-silver)',
   'SEM RESPOSTA': 'var(--amber-500)',
   'CANCELADO': 'var(--red-500)'
 };
 const LOST_STATUSES = ['PREÇO', 'SEM RESPOSTA', 'CANCELADO'];
+
+/* Paleta cíclica pra segmentos de cliente (nomes livres, definidos pelo usuário na planilha) */
+const SEGMENT_PALETTE = ['#01FFA0', '#02C5DB', '#FFD166', '#FF6B81', '#D7E0EA', '#E7A469', '#6FE3F2', '#00D98A'];
+function segmentColor(name, allNames){
+  const idx = allNames.indexOf(name);
+  return SEGMENT_PALETTE[idx % SEGMENT_PALETTE.length];
+}
 
 const $ = id => document.getElementById(id);
 
@@ -97,6 +104,7 @@ async function fetchRecords(){
   const iOrigem = idx('ORIGEM');
   const iDestino = idx('DESTINO');
   const iProtocolo = idx('PROTOCOLO');
+  const iSegmento = idx('SEGMENTO CLIENTE');
 
   if(iCliente < 0 || iStatus < 0) throw new Error('Não encontrei as colunas CLIENTE/STATUS na planilha');
 
@@ -117,7 +125,8 @@ async function fetchRecords(){
       comissaoPct: parseBRLPercent(row[iComPct]),
       rentabilidade: parseBRLPercent(row[iRent]),
       vCom: parseBRLNumber(row[iVCom]),
-      status: status
+      status: status,
+      segmento: iSegmento >= 0 ? (normStr(row[iSegmento]) || 'Não informado') : 'Não informado'
     });
   }
   return out;
