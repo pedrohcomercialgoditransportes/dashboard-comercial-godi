@@ -12,7 +12,6 @@
 <div class="app">
 
   <div class="app-header">
-    <img class="header-photo" src="assets/pedro-h.png" alt="">
     <div class="brand-row">
       <div class="brand-mark">G</div>
       <div class="brand-name">GODI <span class="brand-tag">| Unindo Propósitos.</span></div>
@@ -93,7 +92,7 @@
         <div class="kpi-value" id="kpi-perdido">—</div>
         <div class="kpi-sub" id="kpi-perdido-sub">&nbsp;</div>
       </div>
-      <div class="kpi-card"><div class="bar" style="background:var(--slate-400);"></div>
+      <div class="kpi-card"><div class="bar" style="background:var(--godi-silver);"></div>
         <div class="kpi-label">Em andamento (aberto)</div>
         <div class="kpi-value" id="kpi-aberto">—</div>
         <div class="kpi-sub" id="kpi-aberto-sub">&nbsp;</div>
@@ -125,7 +124,7 @@ function renderStatusBreakdown(data, total){
     const pct = count/maxCount*100;
     const color = STATUS_COLORS[s] || 'var(--slate-400)';
     return `<div class="status-row">
-      <div class="status-tag" style="background:${color};">${s}</div>
+      <div class="status-tag" style="color:${color};">${s}</div>
       <div class="status-track"><div class="status-fill" style="width:${pct}%;background:${color};"></div></div>
       <div class="status-nums">${count} cotações<small>${fmtBRL(val)}</small></div>
     </div>`;

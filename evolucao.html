@@ -12,7 +12,6 @@
 <div class="app">
 
   <div class="app-header">
-    <img class="header-photo" src="assets/pedro-h.png" alt="">
     <div class="brand-row">
       <div class="brand-mark">G</div>
       <div class="brand-name">GODI <span class="brand-tag">| Unindo Propósitos.</span></div>
@@ -61,7 +60,7 @@
       <p class="section-sub" id="evo-sub">Cotações totais x ganhas, e faturamento ganho — histórico completo (esta seção ignora o filtro de período, só respeita o filtro de cliente)</p>
       <div class="evo-charts">
         <div>
-          <div class="evo-chart-title">Cotações por mês <span class="evo-legend"><i style="background:var(--slate-400);"></i>Total &nbsp; <i style="background:var(--green-600);"></i>Ganhas</span></div>
+          <div class="evo-chart-title">Cotações por mês <span class="evo-legend"><i style="background:rgba(6,34,43,.4);"></i>Total &nbsp; <i style="background:var(--navy-900);"></i>Ganhas</span></div>
           <div id="evo-bar-chart"></div>
         </div>
         <div>
@@ -92,10 +91,10 @@ function buildBarChart(labels, totals, ganhos){
     const ganhoH = (ganhos[i]/maxVal) * (h-padTop-padBottom);
     const totalY = h-padBottom-totalH;
     const ganhoY = h-padBottom-ganhoH;
-    bars += `<rect x="${(cx-barW-2).toFixed(1)}" y="${totalY.toFixed(1)}" width="${barW.toFixed(1)}" height="${totalH.toFixed(1)}" fill="var(--slate-400)" opacity="0.55" rx="2"/>`;
+    bars += `<rect x="${(cx-barW-2).toFixed(1)}" y="${totalY.toFixed(1)}" width="${barW.toFixed(1)}" height="${totalH.toFixed(1)}" fill="rgba(6,34,43,.4)" rx="2"/>`;
     bars += `<text x="${(cx-barW/2-2).toFixed(1)}" y="${(totalY-4).toFixed(1)}" font-size="9.5" fill="var(--slate-600)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${totals[i]}</text>`;
-    bars += `<rect x="${(cx+2).toFixed(1)}" y="${ganhoY.toFixed(1)}" width="${barW.toFixed(1)}" height="${ganhoH.toFixed(1)}" fill="var(--green-600)" rx="2"/>`;
-    bars += `<text x="${(cx+barW/2+2).toFixed(1)}" y="${(ganhoY-4).toFixed(1)}" font-size="9.5" fill="var(--green-600)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700">${ganhos[i]}</text>`;
+    bars += `<rect x="${(cx+2).toFixed(1)}" y="${ganhoY.toFixed(1)}" width="${barW.toFixed(1)}" height="${ganhoH.toFixed(1)}" fill="var(--navy-900)" rx="2"/>`;
+    bars += `<text x="${(cx+barW/2+2).toFixed(1)}" y="${(ganhoY-4).toFixed(1)}" font-size="9.5" fill="var(--navy-900)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700">${ganhos[i]}</text>`;
     bars += `<text x="${cx.toFixed(1)}" y="${h-6}" font-size="10.5" fill="var(--slate-400)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${lab}</text>`;
   });
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:150px;">${bars}</svg>`;
@@ -114,12 +113,12 @@ function buildLineChart(labels, values){
   });
   const pathD = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
   const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${h-padBottom} L${pts[0][0].toFixed(1)},${h-padBottom} Z`;
-  const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="var(--teal-500)" stroke="var(--white)" stroke-width="1.5"/>`).join('');
+  const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="var(--navy-900)" stroke="#ffffff" stroke-width="1.5"/>`).join('');
   const monthLabels = labels.map((lab,i) => `<text x="${pts[i][0].toFixed(1)}" y="${h-6}" font-size="10.5" fill="var(--slate-400)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${lab}</text>`).join('');
   const valLabels = pts.map((p,i) => `<text x="${p[0].toFixed(1)}" y="${(p[1]-10).toFixed(1)}" font-size="10" fill="var(--ink-900)" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700">${fmtBRLShort(values[i])}</text>`).join('');
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:150px;">
-    <path d="${areaD}" fill="var(--teal-400)" opacity="0.15"/>
-    <path d="${pathD}" fill="none" stroke="var(--teal-500)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="${areaD}" fill="var(--navy-900)" opacity="0.12"/>
+    <path d="${pathD}" fill="none" stroke="var(--navy-900)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     ${dots}${monthLabels}${valLabels}
   </svg>`;
 }
