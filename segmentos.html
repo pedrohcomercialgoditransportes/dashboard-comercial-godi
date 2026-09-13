@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segmentos — Dashboard GODI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <img class="header-avatar" src="assets/pedro-avatar.png" alt="Pedro Hoffmann">
+    <div class="brand-row">
+      <div class="brand-mark">G</div>
+      <div class="brand-name">GODI <span class="brand-tag">| Unindo Propósitos.</span></div>
+    </div>
+    <div class="header-top-row">
+      <h1>Segmentos</h1>
+    </div>
+    <a class="back-link" href="index.html">← Voltar para a Home</a>
+    <div class="header-sub" style="margin-top:14px;">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Conectando à planilha...</span>
+      <button id="refresh-btn" title="Atualizar dados">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Buscando cotações direto da sua planilha…
+  </div>
+
+  <div id="error-box">
+    <h3>Não consegui buscar os dados agora</h3>
+    <p id="error-msg">Verifique sua conexão e tente atualizar novamente.</p>
+  </div>
+
+  <div id="content">
+
+    <div class="filter-bar">
+      <div class="filter-group wide">
+        <label for="f-cliente">Cliente</label>
+        <select id="f-cliente"></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-tipo">Período</label>
+        <select id="f-tipo">
+          <option value="todos">Todo o período</option>
+          <option value="ano">Ano</option>
+          <option value="mes">Mês</option>
+          <option value="semana">Semana do mês</option>
+        </select>
+      </div>
+      <div class="filter-group" id="grp-ano" style="display:none;">
+        <label for="f-ano">Ano</label>
+        <select id="f-ano"></select>
+      </div>
+      <div class="filter-group" id="grp-mes" style="display:none;">
+        <label for="f-mes">Mês</label>
+        <select id="f-mes"></select>
+      </div>
+      <div class="filter-group" id="grp-semana" style="display:none;">
+        <label for="f-semana">Semana</label>
+        <select id="f-semana"></select>
+      </div>
+      <button class="chip-clear" id="btn-limpar">Limpar filtros</button>
+    </div>
+
+    <div class="client-banner" id="client-banner">
+      <div><small>Visão individual</small><span id="client-banner-name">—</span></div>
+      <button id="client-banner-clear">Voltar para todos ✕</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="bar" style="background:var(--navy-900);"></div>
+        <div class="kpi-label">Cotações ganhas no período</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--navy-900);"></div>
+        <div class="kpi-label">Segmentos ativos</div>
+        <div class="kpi-value" id="kpi-segmentos">—</div>
+        <div class="kpi-sub">com pelo menos 1 cotação ganha</div>
+      </div>
+      <div class="kpi-card"><div class="bar" style="background:var(--navy-900);"></div>
+        <div class="kpi-label">Segmento líder</div>
+        <div class="kpi-value" id="kpi-lider">—</div>
+        <div class="kpi-sub" id="kpi-lider-sub">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Distribuição por segmento</h2>
+      <p class="section-sub">% do faturamento e da quantidade de cotações <strong>ganhas</strong> no período selecionado, por segmento de cliente (coluna "SEGMENTO CLIENTE" na planilha)</p>
+      <div id="segmentos-breakdown"></div>
+    </div>
+
+    <p class="footer-note">GODI Transportes — dados ao vivo da planilha "COTAÇÕES PEDRO AUGUSTO" · atualizado <span id="footer-time">—</span></p>
+  </div>
+
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+function renderSegmentos(){
+  const data = GODI.getFiltered().filter(r => r.status === 'GANHO');
+  const total = data.length;
+
+  $('kpi-total').textContent = total;
+  $('kpi-total-sub').textContent = GODI.state.cliente ? GODI.state.cliente : `${[...new Set(data.map(r=>r.cliente))].length} clientes`;
+
+  const wrap = $('segmentos-breakdown');
+  if(!total){
+    wrap.innerHTML = '<p class="empty-note">Nenhuma cotação ganha nesse filtro.</p>';
+    $('kpi-segmentos').textContent = '0';
+    $('kpi-lider').textContent = '—';
+    $('kpi-lider-sub').textContent = '\u00A0';
+    return;
+  }
+
+  const bySeg = {};
+  data.forEach(r => {
+    const s = r.segmento || 'Não informado';
+    if(!bySeg[s]) bySeg[s] = {count:0, valor:0};
+    bySeg[s].count++;
+    bySeg[s].valor += r.freteEmpresa;
+  });
+
+  const segNames = Object.keys(bySeg).sort((a,b) => bySeg[b].count - bySeg[a].count);
+  $('kpi-segmentos').textContent = segNames.length;
+
+  const lider = segNames[0];
+  const liderPct = (bySeg[lider].count / total * 100);
+  $('kpi-lider').textContent = lider;
+  $('kpi-lider-sub').textContent = `${fmtPct(liderPct)} das cotações ganhas`;
+
+  wrap.innerHTML = segNames.map(s => {
+    const d = bySeg[s];
+    const pct = d.count / total * 100;
+    const color = segmentColor(s, segNames);
+    return `<div class="status-row">
+      <div class="status-tag" style="background:var(--navy-900);color:${color};width:160px;">${s}</div>
+      <div class="status-track"><div class="status-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div class="status-nums">${fmtPct(pct)}<small>${d.count} cotações · ${fmtBRL(d.valor)}</small></div>
+    </div>`;
+  }).join('');
+}
+
+GODI.boot(() => {
+  GODI.buildFilters();
+  GODI.wireFilterBar(renderSegmentos);
+});
+GODI.wireRefresh(() => {
+  GODI.buildFilters();
+  renderSegmentos();
+});
+</script>
+</body>
+</html>
